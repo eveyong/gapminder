@@ -214,6 +214,54 @@ duplicated(gapminder_all_withkey$country)
 table(gapminder_all_withkey$country[duplicated(gapminder_all_withkey$country)]) #to see how many duplicate for each country there are
 
 
+#================================================
+### JOINS ###
+
+library(dplyr) #has join functions
+library(readr) #can import data
+library(gapminder) #for the gapminder dataset
+library(tibble) #to see results in new window
+data(gapminder)
+
+gapminder_all <- read_csv("1_data/gapminderall.csv")
+gapminder <- read.csv("1_data/gapminder.csv")
+
+#mutating joins add columns from one table to another with matching key
+
+gapminder_withkey <- gapminder %>% 
+  mutate (key = paste0(country, "_", year)) #this will be left table
+gapminder_allwithkey <- gapminder_all %>% 
+  mutate (key = paste0(country, "_", year)) #this will be right table
+
+#let us do a left join
+gapminderleft <- left_join(gapminder_withkey, gapminder_allwithkey, by="key")
+gapminderleft
+view(gapminderleft)
+
+#right join
+gapminderright <- right_join(gapminder_withkey, gapminder_allwithkey, by="key")
+gapminderright
+view(gapminderright) #you can see NAs in the left table because not all observations of the right table matches the left table
+miss_var_summary(gapminderright) 
+
+#inner join only matches those that are common for both
+gapminderinner <- inner_join(gapminder_withkey, gapminder_allwithkey, by="key")
+view(gapminderinner)
+
+#full join joins everything
+gapminderfull <- full_join(gapminder_withkey, gapminder_allwithkey, by="key")
+gapminderfull
+view(gapminderfull)
+
+# filtering joins must have key and reference dataset
+
+gapmindersemi <- semi_join(gapminder_withkey, gapminder_allwithkey, by="key")
+view(gapmindersemi) #this only keeps the columns from X table
+
+# anti join is the opposite, it takes the other observations that were not in X
+
+gapminderanti <- anti_join(gapminder_withkey, gapminder_allwithkey, by="key")
+view(gapminderanti)
 
 
 
