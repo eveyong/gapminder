@@ -87,6 +87,138 @@ table(gapminder$continent)/12 #summary shows that the country appears 12 times e
 
 
 ### DATA CLEANING ###
+
+#creating a tibble is like creating a dataframe
+my_tib <- tibble(x=1:3, y=c("blue","pink","yellow")) #shows you the variables when printing
+my_df <- data.frame(x=1:3, y=c("blue","pink","yellow"))
+
+my_tib #printing to show difference
+my_df #printing to show difference
+
+#converting a dataframe into tibble
+as_tibble(my_df)
+
+data("starwars")
+starwars 
+#this is a tibble. A tibble prints it in a nice way already
+#a tibble also shows NAs nicely
+as.data.frame(starwars) #converting starwars into dataframe
+#the result is a messy chunky result
+
+
+#difference between tibble and dataframe is also the subset
+my_df[,1:2] #original data frame
+my_df[,1] #this becomes a vector after subsetting
+
+my_tib[,1:2] #original tibble
+my_tib[,1] #this is still a tibble
+my_tib[[1]] #extracts the vector x
+my_tib[["x"]] #extracts the vector x
+my_tib$x #extracts the vector x
+
+#dataframe must be in sequential manner but tibbles does not need to
+anotherDF <- data.frame(nItems =c(12,45,107),
+                        cost = c(0.5,1.2,1.8),
+                        totalworth = nItems*cost)
+
+anothertib <- tibble(nItems =c(12,45,107),
+                        cost = c(0.5,1.2,1.8),
+                        totalworth = nItems*cost)
+anothertib 
+
+#load the gapminder
+gapminder_all <- read_csv("1_data/gapminderall.csv")
+str(gapminder_all) #have a look at the structure
+
+
+#combine two columns to form a key (esp. useful for combining datasets using a key)
+gapminder_all_gdpcap <- gapminder_all %>%
+  mutate(gdp_per_capita = gdp/population) %>%
+  select(gdp_per_capita) #that creates a new column and you can select it
+
+#we create a new key with country and year combined
+gapminder_all_withkey <- gapminder_all %>%
+  mutate (key = paste0(country, "_", year)) #this does not show "key" column though
+
+gapminder_all_withkey$key #just taking out the column we want to see as a vector
+
+
+#use arrange to arrange data set according to asc or desc based on a column
+#removes the need for index
+gapminder_all_gdpcap %>% arrange(gdp_per_capita) #this is asc order
+gapminder_all_gdpcap %>% arrange(desc(gdp_per_capita))
+
+gapminder_all %>% arrange(fertility)
+
+
+#summarise is handy, it summarises values of variables
+gapminder_all %>% summarise(n_distinct((country))) #finds out how many different countries in the dataset
+#this is same as uniqie
+length(unique(gapminder_all$country)) #gives the unique number of countries
+
+#mean and std dev of population
+
+gapminder_all %>% filter(!is.na(population)) %>% #to get non NAs
+  summarise(mean_pop = mean(population), sd_pop = sd(population))
+
+#put the above into mean_pop
+mean_pop <- gapminder_all %>% filter(!is.na(population)) %>% #to get non NAs
+  summarise(mean_pop = mean(population), sd_pop = sd(population))
+
+class(mean_pop)
+
+gapminder_all2 <- gapminder_all %>% filter(!is.na(gdp)) %>%
+  mutate(gdpovermeanpop = gdp/mean_pop) %>%
+  select(gdp,gdpovermeanpop)
+#problem is the division does not work because of the wrong class / variable type
+
+#we need to pull or extract a value to convert it
+#either .$ works or pull
+mean_pop <- gapminder_all %>% filter(!is.na(population)) %>% #to get non NAs
+  summarise(mean_pop = mean(population), sd_pop = sd(population)) %>%
+  .$mean_pop  #call it a numeric with the dollar sign
+
+
+mean_pop <- gapminder_all %>% filter(!is.na(population)) %>% #to get non NAs
+  summarise(mean_pop = mean(population)) %>%
+  pull(mean_pop)  #this makes it numeric
+
+#so after changing mean_pop and making it numeric, we try again with the mutation
+gapminder_all3 <- gapminder_all %>% filter(!is.na(gdp)) %>% #to get non NAs
+  mutate(gdpovermeanpop = gdp/mean_pop) %>%
+  select(gdp, gdpovermeanpop)
+  
+gapminder_all3 #this is correct dividing after the pull or .$
+
+
+#group by
+
+gapminder_all %>% group_by(continent) %>% filter(!is.na(gdp)) %>%
+  summarise(average = mean(gdp))
+
+
+#distinct shows all distinct values and take out duplicates
+
+distinct(gapminder_all)
+#we end up with the same number of rows so that means our dataset was already all distinct
+
+#how to find duplicates? use duplicated function
+duplicated(gapminder_all_withkey$key) #key with country and year from before
+#all of them look false so far
+
+#can also check with index
+gapminder_all_withkey$key[duplicated(gapminder_all_withkey$key)]  #shows 0 means no duplicate within key
+
+#country has duplicates though
+duplicated(gapminder_all_withkey$country)
+table(gapminder_all_withkey$country[duplicated(gapminder_all_withkey$country)]) #to see how many duplicate for each country there are
+
+
+
+
+
+#================================================
+### MISSING VALUES WEEK 4 ===
 gapminder_all <- read_csv("1_data/gapminderall.csv")
 install.packages("naniar")
 install.packages("simputation")
@@ -195,3 +327,9 @@ miss_var_summary(gapminder_lm)
 
 #naniar is simple with impute_median_all and with simputation, there is always a relationship using ~
 
+#========================================================
+### outliers ###
+
+##capping the outlier
+
+x <- c(1,2,3,100)
