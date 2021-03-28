@@ -11,6 +11,7 @@ library(gapminder)
 library(tidyverse)
 library(readr)
 library(tidyr)
+library(dplyr) #for the mutate
 
 #read in the different gapminder data sets
 data(gapminder)
@@ -27,4 +28,10 @@ head(gapminder) #one variable per column, each observation forms a row, ultimate
 head(gapminder_tsv) #as above, like a table
 
 #need to reshape gapminder_wide to get into tidy form
+gap_long <- gapminder_wide_csv %>%
+  gather(key, value, -continent, -country) %>%
+  separate(key,c("variable_name", "year"), "_") %>%
+  spread(variable_name,value) %>%
+  mutate(year=as.numeric(year)) #year should be numeric, not character
+
 
