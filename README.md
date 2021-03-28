@@ -35,3 +35,33 @@ gap_long <- gapminder_wide_csv %>%
   mutate(year=as.numeric(year)) #year should be numeric, not character
 
 
+#install and load libraries for cleaning data
+install.packages("janitor")
+install.packages("psych")
+library(janitor) #to use clean function
+library(psych) 
+
+
+#summarise the data
+str(gapminder)
+class(gapminder)
+
+#ideal variable names should have no spaces, no capitals for the names
+
+gapminder_adjnames <- gapminder
+names(gapminder_adjnames) <- c("country", "continent", "year", "Life Exp", "population", "Gdp Per cap")
+gapminder_adjnames #to preview the adjusted columns
+
+make.names(names(gapminder_adjnames)) #the spaces in the column name had full stops
+gapminder_clean <- clean_names(gapminder_adjnames) #replaces the dots with underscore
+names(gapminder_clean) #lets you look at the column names
+
+#can also specifically call out which columns to rename
+gapminder_clean2 <- rename(gapminder_adjnames, life_exp = "Life Exp", gdp_per_cap = "Gdp Per cap")
+names(gapminder_clean2)
+
+
+table(gapminder$continent) #like a frequency distribution
+prop.table(table(gapminder$continent)) #get the proportion of continent out of all continents
+summary(gapminder) #provide summary stats of data set
+describe(gapminder) #besides boxplot info, it also gives skewness and kurtosis. 
