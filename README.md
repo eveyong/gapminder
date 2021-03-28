@@ -65,3 +65,23 @@ table(gapminder$continent) #like a frequency distribution
 prop.table(table(gapminder$continent)) #get the proportion of continent out of all continents
 summary(gapminder) #provide summary stats of data set
 describe(gapminder) #besides boxplot info, it also gives skewness and kurtosis. 
+#the variable in question is life expectancy, so distribution is important.
+#can start thinking about whether linear regression is worth solving our problem
+#before moving onto GLMs
+#linear regression has a normality assumption
+#population and GDP is quite skewed in this case because their skew number is >1
+
+#correlation matrix
+cor(gapminder[,3:6]) #picked only columns 3:6 because they are numerical
+#normally correlation does not work if there are blanks or #NAs in the values
+cor(gapminder[,3:6], use="pairwise.complete.obs") #so this correlation tells it to ignore the NAs
+
+#other functions to summarise
+nrow(gapminder) #useful when trying to split dataset into train and test dataset
+ncol(gapminder)
+tail(gapminder) #gives last 6 values, opposite of head
+head(gapminder)
+unique(gapminder)
+
+table(gapminder$continent)/12 #summary shows that the country appears 12 times each year so need to divide by 12 to find out how many times it actually appeared
+ 
