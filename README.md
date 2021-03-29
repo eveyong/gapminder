@@ -265,6 +265,75 @@ view(gapminderanti)
 
 
 
+#=========== quiz
+#Q10
+length(unique(gapminder_all$country)) 
+
+#Q11 last year of data available in gapminder
+gapminder_all %>% arrange(desc(year))
+tail(gapminder_all)
+
+#Q12 For the CAS dataset freMTPL2freq.csv, 
+# calculate the proportion of policies for each vehicle brand.  Which vehicle brand has the highest proportion 
+# and what is the proportion to 3 decimal places?     
+
+CASdata <- read_csv("1_data/freMTPL2freq.csv")     
+summary(CASdata)
+head(CASdata)
+
+length(unique(CASdata$VehBrand)) #there are 11 brands
+prop <- prop.table(table(CASdata$VehBrand))  #to get proportions
+view(prop) #and then arrange it by frequency in desc order
+
+# Q13 what is the proportion of policies coming from the Area "F" to 4 decimal places?
+
+prop.table(table(CASdata$Area)) 
+
+# Q14 For the dataset creditcardcut.csv, 
+# what is the proportion of fraudulent transactions? 
+
+credit <- read_csv("1_data/creditcardcut.csv")
+head(credit)
+summary(credit)
+
+prop.table(table(credit$Class)) 
+# Class = response variable i.e. value 1 denotes fraud and 0 denotes no fraud
+
+
+# Q15 What is the correlation of Pulse Rate 1 and 
+# Height to 3 decimal places (ignoring missing values)
+
+pulserate_url <- "http://www.statsci.org/data/oz/ms212.txt"
+pulserate <- read_tsv(pulserate_url)
+head(pulserate)
+
+cor(pulserate[,1:11], use="pairwise.complete.obs") #so this correlation tells it to ignore the NAs
+
+# Q17 What is the mean change in pulse rate 
+# (pulse rate 2 minus pulse rate 1) for participants who ran?
+
+diffcalc<- pulserate %>% filter(pulserate$Ran == "1") %>%
+  mutate(diff = Pulse2-Pulse1) %>% #create new column to calculate the difference
+  .$diff  #make numeric variable
+
+pulserate_diff <- pulserate %>% filter(pulserate$Ran == "1") %>%
+  summarise(mean(diffcalc, na.rm = TRUE)) #summarise the mean of diffcalc variable
+
+pulserate_diff #to see the value of the mean
+
+# Q18 As above but for those who sat
+diffcalc2<- pulserate %>% filter(pulserate$Ran == "2") %>%
+  mutate(diff = Pulse2-Pulse1) %>% #create new column to calculate the difference
+  .$diff  #make numeric variable
+
+pulserate_diff2 <- pulserate %>% filter(pulserate$Ran == "2") %>%
+  summarise(mean(diffcalc2, na.rm = TRUE)) #summarise the mean of diffcalc variable
+
+pulserate_diff2 #to see the value of the mean
+
+
+
+
 #================================================
 ### MISSING VALUES WEEK 4 ===
 gapminder_all <- read_csv("1_data/gapminderall.csv")
