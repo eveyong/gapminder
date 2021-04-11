@@ -332,7 +332,119 @@ pulserate_diff2 <- pulserate %>% filter(pulserate$Ran == "2") %>%
 pulserate_diff2 #to see the value of the mean
 
 
+#===============================================
+### VISUALISING THE DATA ====
 
+library(gapminder) #to read the data
+library(dplyr) #need this for pipe function
+data(gapminder)
+head(gapminder) 
+
+#look at distribution by creating bar plots
+#need ggplot2
+install.packages("ggplot2") # for graphs
+library(ggplot2)
+
+#geom_bar
+#look at countries in 1952
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(continent)) +  #the x axis variable is the continent
+  geom_bar(colour="steel blue", fill="steel blue") 
+#this shows the number of countries within a continent
+  
+
+#geom_histogram
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(gdpPercap)) + #you can put the aes here or in the geom_histogram
+  geom_histogram(binwidth = 5000) #but if you put into ggplot then you can customise the geom_historgram here
+
+#geom_density
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(gdpPercap)) + 
+  geom_density() 
+
+#box and whisker
+gapminder %>% filter(year==1952) %>%
+  filter(gdpPercap<30000) %>% #because the first result without this shows a very huge outlier
+  ggplot(aes(gdpPercap)) +
+  geom_boxplot() #default outlier is 1.25 quartile
+
+
+#discrete/categorical
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(continent, lifeExp)) +
+  geom_boxplot()
+
+#or
+
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(lifeExp, group=continent, col=continent)) + 
+  geom_boxplot()
+
+#geom_point is a scatter plot
+#also introduce jitter plot
+gapminder %>% filter(year==1952) %>%
+  ggplot(aes(continent, lifeExp)) +
+  geom_point() +  #but this look clumpy, add jitter
+  geom_jitter(alpha=0.5) #this is how you add another layer
+
+#continuous and continuous
+gapminder %>% filter(year==1952, gdpPercap<30000) %>%
+  ggplot(aes(gdpPercap, lifeExp)) +
+  geom_point() +
+  geom_smooth() #adding this will show the additional layer
+
+
+
+#correlations between 2 numeric variables
+head(gapminder) #to check the variables
+pairs(gapminder[,3:6]) #for continent, lifeExp, pop, and gdppercap (columns 3 to 6)
+
+
+#line chart grouping using colour
+gapminder %>% 
+  ggplot(aes(year,lifeExp, col=country)) +
+  geom_line(show.legend = F)
+
+
+#bar chart grouping using colour
+gapminder %>% 
+  ggplot(aes(continent, fill=country)) +
+  geom_bar(show.legend = F)
+
+#filter out Australia as example
+gapminder_aus <- gapminder %>% filter(country=="Australia")
+
+gapminder_aus %>% 
+  ggplot() +
+  geom_line(data = gapminder, aes(year, lifeExp, group=country)) +
+  geom_line(data = gapminder_aus, aes(year, lifeExp), colour="red")  #to bring out the red line
+
+#facet grid
+ggplot(gapminder, aes(x = year, y=lifeExp, group = country)) +
+  geom_line() +
+  facet_grid(.~continent)
+
+#facet wrap is like word wrap
+#good thing about facet is they maintain the axis scales across all
+ggplot(gapminder, aes(x = year, y=lifeExp, group = country)) +
+  geom_line() +
+  facet_wrap(.~continent)
+
+ggplot(gapminder, aes(x = gdpPercap, y=lifeExp, color = year)) +
+  geom_point() +
+  facet_wrap(.~continent)
+
+#scaling variables
+ggplot(gapminder, aes(x = gdpPercap, y = lifeExp)) +
+  geom_point(size = 0.25) +
+  scale_x_continuous(trans="log10")
+
+#save the plot
+#can use the export button to the RHS
+#or use ggsave
+
+ggsave("2_analysis_scripts/gapminder_log_10.pdf")
 
 #================================================
 ### MISSING VALUES WEEK 4 ===
@@ -450,3 +562,251 @@ miss_var_summary(gapminder_lm)
 ##capping the outlier
 
 x <- c(1,2,3,100)
+
+
+#========================================================
+### categorical variables, one hot
+
+#One hot encoding
+#change categorical variables into factors
+
+library(dplyr) #need this for pipe function
+library(readr) #to read data
+gapminder_all <- read_csv("1_data/gapminderall.csv")
+
+#we create new columns to map the continents to 1s and 0s
+gapminder_all_onehot <- gapminder_all %>%
+  mutate(Europe = ifelse(continent == "Europe", 1,0)) %>%
+  mutate(Africa = ifelse(continent == "Africa", 1,0)) %>%
+  mutate(Americas = ifelse(continent == "Americas", 1,0)) %>%
+  mutate(Asia = ifelse(continent == "Asia", 1,0)) %>%
+  mutate(Oceania = ifelse(continent == "Oceania", 1,0))
+
+gapminder_all_onehot %>% select(continent, Europe, Africa, Americas, Asia, Oceania)
+
+#in R we actually do not need to one hot encode, there is regression
+#dummy encoding is what regression does
+#instead of using 1 and 0 for all elements, just create (n-1) columns
+
+
+
+#========================================================
+###categorical data - high cardinality binning encoding
+
+#when there are too many categories, called high cardinality
+#can use binning encoding, i.e. grouping
+
+#first way, using domain knowledge to group categories
+length(unique(gapminder_all$region)) #to see how many unique regions are there
+
+#pretend our original dataset does not have continent, we create our own grouping
+#group these regions by continents
+Europe <- c("Southern Europe", "Eastern Europe", "Western Europe", "Northern Europe")
+Africa <- c("Northern Africa", "Middle Africa", "Western Africa", "Southern Africa", "Eastern Africa")
+Americas <- c("South America", "Central America", "Northern America", "Caribbean")
+Asia <- c("Western Asia", "Southern Asia", "South-Eastern Asia", "Eastern Asia", "Central Asia")
+Oceania <- c("Australia and New Zealand", "Melanesia", "Polynesia", "Micronesia")
+
+gapminder_all_group <- gapminder_all %>%
+  mutate(continent_new = case_when (region %in% Europe ~ "Europe",
+                                    region %in% Africa ~ "Africa",
+                                    region %in% Americas ~ "Americas",
+                                    region %in% Asia ~ "Asia",
+                                    region %in% Oceania ~ "Oceania")) %>%
+  select(continent, region, continent_new)
+         
+gapminder_all_group
+
+###===
+#without domain knowledge, we use the data driven method
+
+#split life expectancy into ranges of 0-50 years and 50+ years
+gapminder_all_lifegroup <- gapminder_all %>%
+  mutate(lifeexp_range = case_when(life_expectancy <= 50 ~ "life50under",
+                                   life_expectancy >50 ~ "life50over"))
+
+
+gapminder_all_lifegroup %>% select(life_expectancy, lifeexp_range) #to see what the groups look like
+
+#now we create the frequency for the new column
+#make it into a table!
+gapminder_table <- gapminder_all_lifegroup %>%
+  select(region,lifeexp_range) %>%
+  table()
+
+gapminder_table         
+
+#to calculate the proportions
+#add a 1
+
+prop_table <- prop.table(gapminder_table, 1)
+prop_table
+
+#can define low-LE to <60%, mid-LE to 60-80%, and high-LE to be >80%
+#firstly, need to change the prop table to a tibble
+
+prop_tibble <- as_tibble(prop_table)
+prop_tibble
+#it changes the lifeexp_range into 1 column and a new column called "n" for the proportion
+
+prop_tibble2 <- prop_tibble %>% filter(lifeexp_range == "life50over") %>%
+  rename(proportion = n)
+
+library(tidyverse) #to use the view function
+view(prop_tibble2)
+
+#join the proportion table to the original gapminder
+gapminder_all_joined <- left_join(gapminder_all, prop_tibble2, by = "region")
+gapminder_all_joined
+
+#let us define it into the 3 categories
+#can define low-LE to <60%, mid-LE to 60-80%, and high-LE to be >80%
+
+gapminder_allv2 <- gapminder_all_joined %>% 
+  mutate(regiongroups = case_when(proportion < 0.6 ~ "lowLEregions",
+                                                         proportion >= 0.6 & proportion < 0.8 ~ "midLEregions",
+                                                         proportion > 0.8 ~ "highLEregions"))
+
+#now we can one hot encode these new categories
+
+gapminder_allv3 <- gapminder_allv2 %>% 
+  mutate(lowLEregions = ifelse(regiongroups == "lowLEregions", 1,0)) %>%
+  mutate(midLEregions = ifelse(regiongroups == "midLEregions", 1,0)) %>%
+  mutate(highLEregions = ifelse(regiongroups == "highLEregions", 1,0))
+
+
+view(gapminder_allv3)
+
+#======================================================
+#PCA
+#another high cardinality issue i.e. high number of variables
+#dimension reduction technique e.g. PCA
+
+gapminder_allomit <- na.omit(gapminder_all) #PCA only works with non-missing values so remove all NAs
+gapminder_allpca <- prcomp(gapminder_allomit[,c(3,4,6,7,8)], center = TRUE, scale. = TRUE)
+
+summary(gapminder_allpca)
+gapminder_allpcavalues <- as_tibble(gapminder_allpca$x) #makes into values
+gapminder_allpcavalues
+
+gapminder_allPCA2 <- bind_cols(gapminder_allomit, gapminder_allpcavalues)
+gapminder_allPCA3 <- gapminder_allPCA2[,c(5,11:14)] #just want to pick up PCA1,2,3,4 and drop 5
+gapminder_allPCA3
+
+#======================================================
+#imbalanced dataset e.g. when one class is sparse and one is abundant
+#e.g. fraud is minority and non-fraud is majority
+
+#do sampling methods, do it on the training set, not on the test dataset
+
+creditcard <- read_csv("1_data/creditcardcut.csv")
+
+install.packages("ROSE")
+install.packages("smotefamily")
+
+library(ROSE) #for sampling
+library(smotefamily) #for SMOTE
+
+#we are creating a training dataset
+set.seed(123) #to make sure we reproduce a random sample of 70% for training and 30% test
+dt <- sort(sample(nrow(creditcard), nrow(creditcard)*0.7)) #random sample as index of 70% of the dataset
+
+dt
+
+creditcard_train <- creditcard[dt,] #takes the 70% of rows
+creditcard_test <- creditcard[-dt,] #takes the 30% of rows
+
+creditcard_train #check that it has 6888 rows (70% of original)
+creditcard_test #check that it has 2952 rows (70% of original)
+
+#check proportion of fraud and non-fraud in training and testing dataset
+#want them to be roughly the same
+
+prop.table(table(creditcard_train$Class))
+prop.table(table(creditcard_test$Class))
+
+#so we want to remove some of the majority but we want to retain the information
+#find out how many majority and minority
+table(creditcard_train$Class) #there are 6551 majority 337 minority
+n_new <- 337/0.5 #find total number of samples to make fraud cases 50% of samples
+
+undersampling_result <- ovun.sample(Class ~.,
+                                    data = creditcard_train,
+                                    method = "under",
+                                    N = n_new,
+                                    seed = 123)
+str(undersampling_result) #see structure
+class(undersampling_result) #it is a ovun.sample but need to make it into a dataframe
+
+cc_undersampled_train <- undersampling_result$data #change it into a dataframe
+
+str(cc_undersampled_train)
+class(cc_undersampled_train) #it became a dataframe
+#check if we have a balance of fraud and non fraudulant cases by checking proportion
+prop.table(table(cc_undersampled_train$Class)) #result is 50/50
+
+#=======
+#oversampling
+
+#next method is the opposite
+#rather than getting rid of majority class, we increase minority class
+#called oversampling the minority class
+#replicates the observations of minority class
+
+#advantage is there is no info loss. but it is only replicating obs in the original dataset
+#can lead to overfitting
+
+table(creditcard_train$Class)
+n_new2 <- 6551/0.5 #or times 2
+
+oversampling_result <- ovun.sample(Class ~.,
+                                   data = creditcard_train,
+                                   method = "over",
+                                   N = n_new2,
+                                   seed = 123)
+
+str(oversampling_result)
+class(oversampling_result)
+
+#check the balance
+cc_oversampled_train <- oversampling_result$data #make it a dataframe
+prop.table(table(cc_oversampled_train$Class)) #result is 50/50
+
+
+#========
+#combination of over and under sampling
+
+n_new3 <- 10000 #new number of rows
+fraud_fraction <- 0.5 #to give the fraction to be 0.5 of the data 
+sampling_result <- ovun.sample(Class ~.,
+                               data = creditcard_train,
+                               method = "both",
+                               N = n_new3,
+                               p = fraud_fraction,
+                               seed = 123)
+
+#aim for probability of occurence = 0.5  but it will be close
+cc_bothsample_train <- sampling_result$data #make into dataframe
+prop.table(table(cc_bothsample_train$Class)) #51/49 very close
+
+#==========
+#another method is to use SMOTE
+#instead of repeating the minority class, we create synthetic ones
+
+table(creditcard_train$Class)
+#we have 6551 majority and 337 minority
+n0 <- 6551; n1 <- 337; r0 <- 0.5
+
+ntimes <- ((1-r0)/r0)*(n0/n1)-1
+ntimes #18 times
+
+smote_output <- SMOTE(X = creditcard_train[,-c(1,2,32,33)],
+                      target = creditcard_train$Class,
+                      K = 5,
+                      dup_size = ntimes)
+
+class(smote_output) #it is a gendata, turn it into a dataframe next
+cc_smote_train <- smote_output$data #turn into dataframe
+
+colnames(cc_smote_train)[30] <- "Class"
+prop.table(table(cc_smote_train$Class)) #the proportion is 51/49
