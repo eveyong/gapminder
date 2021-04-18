@@ -810,3 +810,40 @@ cc_smote_train <- smote_output$data #turn into dataframe
 
 colnames(cc_smote_train)[30] <- "Class"
 prop.table(table(cc_smote_train$Class)) #the proportion is 51/49
+
+
+#========================================================
+### week 4 quiz
+
+#Q2 ggplot(data=gapminder)
+ggplot(data=gapminder)
+
+
+#Q10
+
+gapminder %>% 
+  filter(country %in% c("Australia", "New Zealand")) %>% 
+  ggplot(aes(year, pop)) + 
+  geom_line()
+
+gapminder %>% 
+  filter(country %in% c("Australia", "New Zealand")) %>% 
+  ggplot(aes(year, pop, colour=country)) + 
+  geom_line()
+
+
+#Q11
+
+gapminder %>% 
+  filter(continent == "Oceania") %>% 
+  ggplot(aes(year, pop)) + 
+  geom_line(aes(group = country)) +
+  geom_point()
+
+
+gapminder %>% 
+  filter(continent == "Oceania") %>% 
+  ggplot(aes(year, pop, group = country)) + 
+  geom_line()
+
+?ggplot2
